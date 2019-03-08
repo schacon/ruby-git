@@ -6,8 +6,8 @@ module Git
     
     def initialize(base, from = nil, to = nil)
       @base = base
-      @from = from.to_s
-      @to = to.to_s
+      @from = from && from.to_s 
+      @to = to && to.to_s
 
       @path = nil
       @full_diff = nil
@@ -15,7 +15,11 @@ module Git
       @stats = nil
     end
     attr_reader :from, :to
-    
+   
+    def name_status
+      cache_name_status
+    end
+
     def path(path)
       @path = path
       return self
@@ -96,40 +100,44 @@ module Git
     private
     
       def cache_full
-        unless @full_diff
-          @full_diff = @base.lib.diff_full(@from, @to, {:path_limiter => @path})
-        end
+        @full_diff ||= @base.lib.diff_full(@from, @to, {:path_limiter => @path})
       end
       
       def process_full
-        unless @full_diff_files
-          cache_full
-          @full_diff_files = process_full_diff
-        end
+        return if @full_diff_files
+        cache_full
+        @full_diff_files = process_full_diff
       end
       
       def cache_stats
-        unless @stats
-          @stats = @base.lib.diff_stats(@from, @to, {:path_limiter => @path})
-        end
+        @stats ||=  @base.lib.diff_stats(@from, @to, {:path_limiter => @path})
+      end
+
+      def cache_name_status
+        @name_status ||= @base.lib.diff_name_status(@from, @to, {:path => @path})
       end
       
       # break up @diff_full
       def process_full_diff
+        defaults = {
+          :mode => '',
+          :src => '',
+          :dst => '',
+          :type => 'modified'
+        }
         final = {}
         current_file = nil
         @full_diff.split("\n").each do |line|
-          if m = /diff --git a\/(.*?) b\/(.*?)/.match(line)
+          if m = /^diff --git a\/(.*?) b\/(.*?)/.match(line)
             current_file = m[1]
-            final[current_file] = {:patch => line, :path => current_file, 
-                                    :mode => '', :src => '', :dst => '', :type => 'modified'}
+            final[current_file] = defaults.merge({:patch => line, :path => current_file})
           else
-            if m = /index (.......)\.\.(.......)( ......)*/.match(line)
+            if m = /^index (.......)\.\.(.......)( ......)*/.match(line)
               final[current_file][:src] = m[1]
               final[current_file][:dst] = m[2]
               final[current_file][:mode] = m[3].strip if m[3]
             end
-            if m = /(.*?) file mode (......)/.match(line)
+            if m = /^([[:alpha:]]*?) file mode (......)/.match(line)
               final[current_file][:type] = m[1]
               final[current_file][:mode] = m[2]
             end

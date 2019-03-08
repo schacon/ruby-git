@@ -16,7 +16,8 @@ class TestBase < Test::Unit::TestCase
       create_file('test_add/test_file_2', 'content test_file_2')
       create_file('test_add/test_file_3', 'content test_file_3')
       create_file('test_add/test_file_4', 'content test_file_4')
-      
+      create_file('test_add/test file with \' quote', 'content test_file_4')
+
       assert(!git.status.added.assoc('test_file_1'))
       
       # Adding a single file, usign String
@@ -33,10 +34,11 @@ class TestBase < Test::Unit::TestCase
       assert(!git.status.added.assoc('test_file_4'))
 
       # Adding multiple files, using Array
-      git.add(['test_file_3','test_file_4'])
+      git.add(['test_file_3','test_file_4', 'test file with \' quote'])
 
       assert(git.status.added.assoc('test_file_3'))
       assert(git.status.added.assoc('test_file_4'))
+      assert(git.status.added.assoc('test file with \' quote'))
       
       git.commit('test_add commit #1')
 
@@ -72,9 +74,35 @@ class TestBase < Test::Unit::TestCase
       
       git.commit('test_add commit #3')
 
-      assert(!git.status.deleted.empty?)
       assert(git.status.changed.empty?)
       assert(git.status.added.empty?)
+    end
+  end
+
+  def test_commit
+    in_temp_dir do |path|
+      git = Git.clone(@wdir, 'test_commit')
+      
+      create_file('test_commit/test_file_1', 'content tets_file_1')
+      create_file('test_commit/test_file_2', 'content test_file_2')
+
+      git.add('test_file_1')
+      git.add('test_file_2')
+
+      base_commit_id = git.log[0].objectish
+
+      git.commit("Test Commit")
+
+      original_commit_id = git.log[0].objectish
+
+      create_file('test_commit/test_file_3', 'content test_file_3')
+      
+      git.add('test_file_3')
+
+      git.commit(nil, :amend => true)
+
+      assert(git.log[0].objectish != original_commit_id)
+      assert(git.log[1].objectish == base_commit_id)
     end
   end
 

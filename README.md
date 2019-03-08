@@ -13,6 +13,13 @@ http://github.com/schacon/ruby-git
 You can install Ruby/Git like this:
 
     $ sudo gem install git
+    
+## Code Status
+
+* [![Build Status](https://api.travis-ci.org/schacon/ruby-git.png)](https://travis-ci.org/schacon/ruby-git)
+* [![Code Climate](https://codeclimate.com/github/schacon/ruby-git.png)](https://codeclimate.com/github/schacon/ruby-git)
+* [![Gem Version](https://badge.fury.io/rb/git.png)](http://badge.fury.io/rb/git)
+* [![Dependencies](https://gemnasium.com/schacon/ruby-git.png?travis)](https://gemnasium.com/schacon/ruby-git)
 
 ## Major Objects
 
@@ -49,6 +56,20 @@ Require the 'git' gem.
 ```ruby
     require 'git'
 ```
+
+Git env config
+
+```ruby
+  Git.configure do |config|
+    # If you want to use a custom git binary
+    config.binary_path = '/git/bin/path'
+
+    # If you need to use a custom SSH script
+    config.git_ssh = '/path/to/ssh/script'
+  end
+
+```
+
 
 Here are the operations that need read permission only.
 
@@ -106,7 +127,10 @@ Here are the operations that need read permission only.
     g.grep('hello')  # implies HEAD
     g.blob('v2.5:Makefile').grep('hello')
     g.tag('v2.5').grep('hello', 'docs/')
-
+    g.describe() 
+    g.describe('0djf2aa')
+    g.describe('HEAD', {:all => true, :tags => true})
+  
     g.diff(commit1, commit2).size
     g.diff(commit1, commit2).stats
     g.gtree('v2.5').diff('v2.6').insertions
@@ -124,7 +148,16 @@ Here are the operations that need read permission only.
     g.config('user.name')  # returns 'Scott Chacon'
     g.config # returns whole config hash
 
-    g.tag # returns array of Git::Tag objects
+    g.tags # returns array of Git::Tag objects
+    
+    g.show()
+    g.show('HEAD')
+    g.show('v2.8', 'README.md')
+
+    Git.ls_remote('https://github.com/schacon/ruby-git.git') # returns a hash containing the available references of the repo.
+    Git.ls_remote('/path/to/local/repo')
+    Git.ls_remote() # same as Git.ls_remote('.')
+
 ```
 
 And here are the operations that will need to write to your git repository.
@@ -133,8 +166,8 @@ And here are the operations that will need to write to your git repository.
       g = Git.init
        Git.init('project')
        Git.init('/home/schacon/proj',
-        { :git_dir => '/opt/git/proj.git',
-           :index_file => '/tmp/index'} )
+        { :repository => '/opt/git/proj.git',
+           :index => '/tmp/index'} )
 
      g = Git.clone(URI, NAME, :path => '/tmp/checkout')
      g.config('user.name', 'Scott Chacon')
@@ -196,6 +229,18 @@ And here are the operations that will need to write to your git repository.
      g.pull(Git::Repo, Git::Branch) # fetch and a merge
 
      g.add_tag('tag_name') # returns Git::Tag
+     g.add_tag('tag_name', 'object_reference')
+     g.add_tag('tag_name', 'object_reference', {:options => 'here'})
+     g.add_tag('tag_name', {:options => 'here'})
+
+     Options:
+       :a | :annotate
+       :d
+       :f
+       :m | :message
+       :s
+
+     g.delete_tag('tag_name')
 
      g.repack
 
