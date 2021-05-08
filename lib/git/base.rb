@@ -1,4 +1,5 @@
 require 'git/base/factory'
+require 'git/git_config'
 
 module Git
   # Git::Base is the main public interface for interacting with Git commands.
@@ -9,6 +10,7 @@ module Git
   #
   class Base
     include Git::Base::Factory
+    include Git::GitConfig
 
     # (see Git.bare)
     def self.bare(git_dir, options = {})
@@ -132,23 +134,6 @@ module Git
     def chdir # :yields: the Git::Path
       Dir.chdir(dir.path) do
         yield dir.path
-      end
-    end
-
-    #g.config('user.name', 'Scott Chacon') # sets value
-    #g.config('user.email', 'email@email.com')  # sets value
-    #g.config('user.name')  # returns 'Scott Chacon'
-    #g.config # returns whole config hash
-    def config(name = nil, value = nil)
-      if(name && value)
-        # set value
-        lib.config_set(name, value)
-      elsif (name)
-        # return value
-        lib.config_get(name)
-      else
-        # return hash
-        lib.config_list
       end
     end
 
