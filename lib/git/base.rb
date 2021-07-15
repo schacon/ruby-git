@@ -592,6 +592,10 @@ module Git
       self.lib.branch_current
     end
 
+    # @return [String] name of default branch
+    def branch_default
+      self.lib.branch_default
+    end
   end
 
 end
